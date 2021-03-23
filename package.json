@@ -1,0 +1,38 @@
+{
+    "name": "koishi-plugin-dice",
+    "version": "0.1.0",
+    "engines": {
+        "node": ">=14.16.0"
+    },
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "author": "H4M5TER <zhuxx2003@gmail.com>",
+    "repository": "github:H4M5TER/koishi-plugin-dice",
+    "license": "MIT",
+    "homepage": "https://github.com/H4M5TER/koishi-plugin-dice#readme",
+    "bugs": "https://github.com/H4M5TER/koishi-plugin-dice/issues",
+    "keywords": [
+        "koishi",
+        "qqbot",
+        "trpg",
+        "dice",
+        "coc",
+        "dnd"
+    ],
+    "dependencies": {},
+    "peerDependencies": {
+        "koishi-core": "^3.3.1"
+    },
+    "devDependencies": {
+        "typescript": "^4.2.3",
+        "@tsconfig/node14": "^1.0.0",
+        "ts-node": "^9.1.1",
+        "koishi-core": "^3.3.1"
+    },
+    "scripts": {
+        "build": "tsc"
+    }
+}
