@@ -20,16 +20,15 @@ declare module 'tree-sitter' {
 let default_faces = 100
 
 const evaluate = (node: SyntaxNode): any => {
+  let quanity
   switch (node.type) {
-    case 'source':
-      return evaluate(node.child(0))
     case 'operator':
       return evaluate(node.child(1))(
         evaluate(node.child(0)),
         evaluate(node.child(2))
       )
     case 'dice':
-      let quanity = node.quanityNode ? evaluate(node.quanityNode) : 1
+      quanity = node.quanityNode ? evaluate(node.quanityNode) : 1
       let faces = node.facesNode ? evaluate(node.facesNode) : default_faces
       let keep = node.keepNode ? evaluate(node.keepNode) : quanity
       if (quanity < 1) throw new Error('骰子数不合法')
@@ -54,7 +53,7 @@ const evaluate = (node: SyntaxNode): any => {
         tens.push(Math.floor(Math.random() * 10))
       tens.sort(evaluate(node.child(0)))
       if (tens[0] * 10 + ones === 0) return 100
-      else return tens[0] * 10 + ones !== 0
+      else return tens[0] * 10 + ones
     case 'b':
       return (a: number, b: number) => a - b // ascending
     case 'p':
@@ -79,23 +78,25 @@ const evaluate = (node: SyntaxNode): any => {
 
 export function apply(ctx: Context) {
   ctx
-    .command('roll <input:text]')
-    .option('hide', '-h', { fallback: false })
-    .shortcut('r(.*)', { args: ['$1'] })
-    .shortcut('rh(.*)', { args: ['$1'], options: { hide: true } })
+    .command('roll <input:text>')
+    .option('hide', '--hide')
+    .shortcut(/^rh(.*)$/, { args: ['$1'], options: { hide: true } })
+    .shortcut(/^r(.*)$/, { args: ['$1'] })
     .userFields(['name'])
     .action(({ options, session }, input) => {
-      let { name } = session.user
+      input ??= ''
       let { rootNode } = parser.parse(input.trim().toLowerCase())
+      if (rootNode.hasError())
+        return '骰子表达式错误'
       let main = rootNode.mainNode ?? parser.parse('d').rootNode.mainNode
-      let comment = rootNode.commentNode.text ?? ''
-      let result = `${name}: ${comment}\n`
+      let comment = rootNode.commentNode?.text ?? ''
+      let result = `${session.username}: ${comment}\n`
       try {
         if (rootNode.repeatNode) {
           let repeat = evaluate(rootNode.repeatNode)
-          result += `${rootNode.repeatNode.text}=${repeat}`
+          result += `${rootNode.repeatNode.text}=${repeat}\n`
           for (let i = 1; i <= repeat; ++i) {
-            result += `${i}. ${main.text}=${evaluate(main)}`
+            result += `${i}. ${main.text}=${evaluate(main)}\n`
           }
         } else result += `${main.text}=${evaluate(main)}`
       } catch (error) {
