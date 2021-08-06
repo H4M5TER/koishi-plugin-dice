@@ -79,8 +79,6 @@ export function apply(ctx: Context) {
   ctx
     .command('roll <input:text>')
     .option('hide', '--hide')
-    .shortcut(/^rh(.*)$/, { args: ['$1'], options: { hide: true } })
-    .shortcut(/^r(.*)$/, { args: ['$1'] })
     .userFields(['name'])
     .action(({ options, session }, input = '') => {
       let { rootNode } = parser.parse(input.trim().toLowerCase())
@@ -106,4 +104,16 @@ export function apply(ctx: Context) {
       )
       return `${session.username}进行了一次暗骰`
     })
+  ctx.middleware((session, next) => {
+    const { content, prefix } = session.parsed
+    if (!prefix && content[0] === 'r') {
+      if (content[1] === 'h')
+        return session.execute({
+          name: 'roll',
+          args: [content.slice(2)],
+          options: { hide: true },
+        })
+      return session.execute({ name: 'roll', args: [content.slice(1)] })
+    } else return next()
+  })
 }
