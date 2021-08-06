@@ -73,7 +73,7 @@ const evaluate = (node: SyntaxNode): any => {
   }
 }
 
-export function apply(ctx: Context) {
+export default function apply(ctx: Context) {
   ctx
     .command('roll <input:text>')
     .option('hide', '--hide')
