@@ -29,25 +29,24 @@ const evaluate = (node: SyntaxNode): any => {
       )
     case 'dice':
       quanity = node.quanityNode ? evaluate(node.quanityNode) : 1
-      let faces = node.facesNode ? evaluate(node.facesNode) : default_faces
-      let keep = node.keepNode ? evaluate(node.keepNode) : quanity
+      const faces = node.facesNode ? evaluate(node.facesNode) : default_faces
+      const keep = node.keepNode ? evaluate(node.keepNode) : quanity
       if (quanity < 1) throw new Error('骰子数不合法')
       if (faces < 1) throw new Error('骰子面数不合法')
       if (keep < 1) throw new Error('保留的骰子数不合法')
       let res = []
       for (let i = 0; i < quanity; ++i)
         res.push(Math.floor(Math.random() * faces) + 1)
-      if (keep < quanity) {
-        res.sort((a, b) => b - a)
-        res = res.slice(0, keep)
-      }
       // output = output.replace(node.text, `(${res.join('+')})`)
       // console.log(`(${res.join('+')})`)
-      return res.reduce((a, b) => a + b)
+      return res
+        .sort((a, b) => b - a)
+        .slice(0, keep)
+        .reduce((a, b) => a + b)
     case 'coc_extra_dice':
       quanity = node.quanityNode ? evaluate(node.quanityNode) : 1
-      if (quanity < 1) throw new Error()
-      let ones = Math.floor(Math.random() * 10)
+      if (quanity < 1) throw new Error('奖励/惩罚骰数量不合法')
+      const ones = Math.floor(Math.random() * 10)
       let tens = []
       for (let i = 0; i <= quanity; ++i)
         tens.push(Math.floor(Math.random() * 10))
@@ -83,11 +82,9 @@ export function apply(ctx: Context) {
     .shortcut(/^rh(.*)$/, { args: ['$1'], options: { hide: true } })
     .shortcut(/^r(.*)$/, { args: ['$1'] })
     .userFields(['name'])
-    .action(({ options, session }, input) => {
-      input ??= ''
+    .action(({ options, session }, input = '') => {
       let { rootNode } = parser.parse(input.trim().toLowerCase())
-      if (rootNode.hasError())
-        return '骰子表达式错误'
+      if (rootNode.hasError()) return '骰子表达式错误'
       let main = rootNode.mainNode ?? parser.parse('d').rootNode.mainNode
       let comment = rootNode.commentNode?.text ?? ''
       let result = `${session.username}: ${comment}\n`
@@ -107,6 +104,6 @@ export function apply(ctx: Context) {
         session.userId,
         `在[${session.channelName}](${session.channelId})中:\n${result}`
       )
-      return `${name}进行了一次暗骰`
+      return `${session.username}进行了一次暗骰`
     })
 }
