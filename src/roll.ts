@@ -104,7 +104,7 @@ export default function apply(ctx: Context) {
     })
   ctx.middleware((session, next) => {
     const { content, prefix } = session.parsed
-    if (!prefix && content[0] === 'r') {
+    if (prefix && content[0] === 'r') {
       if (content[1] === 'h')
         return session.execute({
           name: 'roll',
