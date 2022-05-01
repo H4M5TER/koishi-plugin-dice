@@ -1,5 +1,7 @@
-import { Context } from 'koishi-core'
+import { Context } from 'koishi'
 import Parser, { SyntaxNode } from 'tree-sitter'
+
+export const name = 'roll'
 
 const parser = new Parser()
 parser.setLanguage(require('tree-sitter-dice'))

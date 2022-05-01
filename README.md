@@ -1,4 +1,11 @@
-# 骰子插件 for koishi
+# 骰子插件 for Koishi
+
+[![npm](https://img.shields.io/npm/v/koishi-plugin-dice?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-dice)
+
+## 杂项
+
+- [ ] 提供 tree-sitter-dice 的 Windows 预编译
+- [x] 升级到 Koishi v4
 
 ## 功能
 
