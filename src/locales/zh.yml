@@ -1,0 +1,13 @@
+﻿commands:
+  roll:
+    description: 掷骰
+    options:
+      hide: 暗骰
+    messages:
+      multi-dice: |
+        {0} 掷骰 {1} 次: {2}
+        {3} = {4}
+      single-dice: |
+        {0} 掷骰: {1}
+        {2} = {3}
+      hide: '{0} 进行了一次暗骰'

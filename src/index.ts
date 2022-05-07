@@ -5,10 +5,11 @@ export const name = 'dice'
 
 export function apply(ctx: Context) {
   ctx.plugin(dice)
+
+  ctx.i18n.define('zh', require('./locales/zh'))
   ctx
     .command('roll <input:text>')
     .option('hide', '--hide')
-    .userFields(['name'])
     .action(({ options, session }, input = '') => {
       function flat(input: [string, number]): string {
         if (parseInt(input[0]) === input[1])
@@ -16,24 +17,24 @@ export function apply(ctx: Context) {
         return `${input[0]} = ${input[1]}`
       }
 
-      const [, time, dice, comment = ''] = input.trim().toLowerCase().match(/(?:([^#]+)#)?([\d+*x\-\/dk()]+)(.*)?/)
+      const [, time, dice, comment = ''] = input.trim().toLowerCase().match(/(?:([^#]+)#)?([\d+*x\-\/dk()]+)(.*)/)
       let answer: string
       if (time) {
         const parsed_time = ctx.dice.parse(time)
-        answer = `${session.username}掷骰 ${time} 次: ${comment}\n${time} = ${flat(parsed_time)}\n`
+        answer = session.text('.multi-dice', [session.username, time, comment, time, flat(parsed_time)])
         for (let i = 1; i <= parsed_time[1]; ++i) {
           answer += `${i}. ${dice} = ${flat(ctx.dice.parse(dice))}\n`
         }
       } else {
-        answer = `${session.username}掷骰: ${comment}\n ${flat(ctx.dice.parse(dice))}`
+        answer = session.text('.single-dice', [session.username, comment, dice, flat(ctx.dice.parse(dice))])
       }
-      
+
       if (!options.hide) return answer
       session.bot.sendPrivateMessage(
         session.userId,
-        `在[${session.channelName}]:\n${answer}`
+        `[${session.channelName}]:\n${answer}`
       )
-      return `${session.username}进行了一次暗骰`
+      return session.text('.hide', [session.username])
     })
   ctx.middleware((session, next) => {
     const { content, prefix } = session.parsed

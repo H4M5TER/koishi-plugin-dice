@@ -23,7 +23,7 @@
         "dist"
     ],
     "scripts": {
-        "build": "peggy --plugin ./node_modules/ts-pegjs/src/tspegjs -o ./src/parser.ts --cache src/dice.peggy"
+        "build": "peggy --plugin ./node_modules/ts-pegjs/src/tspegjs -o src/parser.ts --cache src/dice.peggy && peggy -o lib/parser.js --cache src/dice.peggy"
     },
     "peerDependencies": {
         "koishi": "^4.6.1"
