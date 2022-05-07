@@ -10,13 +10,16 @@ declare module 'koishi' {
 }
 
 class Dice extends Service {
+  private logger: Logger
 
   constructor(ctx: Context, public config: Dice.Config) {
     super(ctx, 'dice')
+    this.logger = ctx.logger('dice')
   }
 
-  parse(input: string) {
+  parse(input: string): [string, number] {
     try {
+      // this.logger.info('parsed ' + input)
       return parse(input)
     } catch (error) {
       return error

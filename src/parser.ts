@@ -7,14 +7,17 @@
 
 
   const roll = face => Math.floor(Math.random() * face) + 1
-  const default_face = 100
-  // 这里考虑怎么和外部交互，考虑引用固定包或者语法整体嵌入程序体内
-  // 把 peggy 嵌入程序体内成功，但是试图用 ts-pegjs 携带类型失败
-  // 要不还是手撕一个 parser 吧，这么屁点东西
+  const default_face = 20
+  // pegjs 生成的 parser 类型感人，ts-pegjs 的 returnTypes 毫无影响 metadevpro/ts-pegjs#11
+  // 这里考虑怎么和外部交互，考虑引用固定包或者运行时生成 parser
+  // 运行时生成 parser 无法使用 ts-pegjs
+
   // 如果需要多次投相同表达式，目前只能重复解析，很浪费
-  // 暂时不确定 cache 的作用，但是看起来至少不会跳过掷骰
   // 然而 peggyjs 不仅仅是不支持增量编译的，它甚至不输出语法树
   // 就算如此，我还是不可能回去用 tree-sitter 受 gyp 折磨
+  // 暂时不确定 cache 的作用，但是看起来至少不会跳过掷骰
+
+  // 出于泛用的考虑，不用 parser 处理重复次数和 comment（返回 tuple 真的泛用吗
 
 
 export interface IFilePosition {
@@ -230,10 +233,10 @@ function peg$parse(input: string, options?: IParseOptions) {
   const peg$c0 = /^[\-+]/;
   const peg$c1 = peg$classExpectation(["-", "+"], false, false);
   const peg$c2 = function(head: any, tail: any): any {
-      const res = tail.reduce(function(res, match) {
-        res[0] += match[1] + match[3][0]
-        if (match[1] === "+") res[1] = res[1] + match[3][1]
-        if (match[1] === "-") res[1] = res[1] - match[3][1]
+      const res = tail.reduce((res, match) => {
+        res[0] += match[0] + match[1][0]
+        if (match[0] === "+") res[1] = res[1] + match[1][1]
+        if (match[0] === "-") res[1] = res[1] - match[1][1]
         return res
       }, head)
       // 此处如果拍平, Expr 就无法被 Factor 复用
@@ -244,9 +247,9 @@ function peg$parse(input: string, options?: IParseOptions) {
   const peg$c4 = peg$classExpectation(["x", "*", "/"], false, false);
   const peg$c5 = function(head: any, tail: any): any {
       const res = tail.reduce((res, match) => {
-        res[0] += match[1] + match[3][0]
-        if (match[1] === "*") res[1] = res[1] * match[3][1]
-        if (match[1] === "/") res[1] = res[1] / match[3][1]
+        res[0] += match[0] + match[1][0]
+        if (match[0] === "*") res[1] = res[1] * match[1][1]
+        if (match[0] === "/") res[1] = res[1] / match[1][1]
         return res
       }, head)
       return res
@@ -262,31 +265,30 @@ function peg$parse(input: string, options?: IParseOptions) {
   const peg$c14 = "k";
   const peg$c15 = peg$literalExpectation("k", false);
   const peg$c16 = function(quantity: any, face: any, keep: any): any { return keep };
-  const peg$c17 = function(quantity: any, face: any, keep: any): any {{
-        if (face === null)
-          face = default_face
-        else if ((face = face[1]) === 0) // 压根没做负数，减号会直接作为算符
-          throw new Error('骰子面数不合法')
-        if (quantity === null || (quantity = quantity[1]) === 1) {
-          // 此时不对 k 进行处理
-          const res = roll(face)
-          return [res, res]
-        } else {
-          if (quantity === 0)
-            throw new Error('骰子个数不合法')
-          if (keep === null)
-            keep = quantity
-          else if ((keep = keep[1]) === 0)
-            throw new Error('骰子保留数不合法')
-          let res = []
-          for (let i = 0; i < quantity; ++i)
-            res.push(roll(face))
-          res = res.sort((a, b) => b - a).slice(0, keep) // slice 在 keep 大于长度时行为正确
-          return [
-            '(' + res.join('+') + ')',
-            res.reduce((a, b) => a + b)
-          ]
-        }
+  const peg$c17 = function(quantity: any, face: any, keep: any): any {
+      if (face === null)
+        face = default_face
+      else if ((face = face[1]) === 0) // 压根没做负数，减号会直接作为算符
+        throw new Error('骰子面数不合法')
+      if (quantity === null || (quantity = quantity[1]) === 1) {
+        // 此时不对 k 进行处理
+        const res = roll(face)
+        return [res.toString(), res]
+      } else {
+        if (quantity === 0)
+          throw new Error('骰子个数不合法')
+        if (keep === null)
+          keep = quantity
+        else if ((keep = keep[1]) === 0)
+          throw new Error('骰子保留数不合法')
+        let res = []
+        for (let i = 0; i < quantity; ++i)
+          res.push(roll(face))
+        res = res.sort((a, b) => b - a).slice(0, keep) // slice 在 keep 大于长度时行为正确
+        return [
+          '(' + res.join('+') + ')',
+          res.reduce((a, b) => a + b)
+        ]
       }
     };
   const peg$c18 = peg$otherExpectation("integer");
@@ -299,12 +301,6 @@ function peg$parse(input: string, options?: IParseOptions) {
         parseInt(text(), 10)
       ]
     };
-  const peg$c22 = /^[^d+*x\-\/#dkbp]/;
-  const peg$c23 = peg$classExpectation(["d", "+", "*", "x", "-", "/", "#", "d", "k", "b", "p"], true, false);
-  const peg$c24 = peg$anyExpectation();
-  const peg$c25 = peg$otherExpectation("blank");
-  const peg$c26 = /^[ \t\n\r]/;
-  const peg$c27 = peg$classExpectation([" ", "\t", "\n", "\r"], false, false);
 
   let peg$currPos = 0;
   let peg$savedPos = 0;
@@ -452,9 +448,9 @@ function peg$parse(input: string, options?: IParseOptions) {
   }
 
   function peg$parseExpr(): any {
-    let s0, s1, s2, s3, s4, s5, s6, s7;
+    let s0, s1, s2, s3, s4, s5;
 
-    const key = peg$currPos * 7 + 0;
+    const key = peg$currPos * 5 + 0;
     const cached: ICached = peg$resultsCache[key];
 
     if (cached) {
@@ -468,30 +464,18 @@ function peg$parse(input: string, options?: IParseOptions) {
     if (s1 as any !== peg$FAILED) {
       s2 = [];
       s3 = peg$currPos;
-      s4 = peg$parse_();
+      if (peg$c0.test(input.charAt(peg$currPos))) {
+        s4 = input.charAt(peg$currPos);
+        peg$currPos++;
+      } else {
+        s4 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$c1); }
+      }
       if (s4 as any !== peg$FAILED) {
-        if (peg$c0.test(input.charAt(peg$currPos))) {
-          s5 = input.charAt(peg$currPos);
-          peg$currPos++;
-        } else {
-          s5 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c1); }
-        }
+        s5 = peg$parseTerm();
         if (s5 as any !== peg$FAILED) {
-          s6 = peg$parse_();
-          if (s6 as any !== peg$FAILED) {
-            s7 = peg$parseTerm();
-            if (s7 as any !== peg$FAILED) {
-              s4 = [s4, s5, s6, s7];
-              s3 = s4;
-            } else {
-              peg$currPos = s3;
-              s3 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s3;
-            s3 = peg$FAILED;
-          }
+          s4 = [s4, s5];
+          s3 = s4;
         } else {
           peg$currPos = s3;
           s3 = peg$FAILED;
@@ -503,30 +487,18 @@ function peg$parse(input: string, options?: IParseOptions) {
       while (s3 as any !== peg$FAILED) {
         s2.push(s3);
         s3 = peg$currPos;
-        s4 = peg$parse_();
+        if (peg$c0.test(input.charAt(peg$currPos))) {
+          s4 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c1); }
+        }
         if (s4 as any !== peg$FAILED) {
-          if (peg$c0.test(input.charAt(peg$currPos))) {
-            s5 = input.charAt(peg$currPos);
-            peg$currPos++;
-          } else {
-            s5 = peg$FAILED;
-            if (peg$silentFails === 0) { peg$fail(peg$c1); }
-          }
+          s5 = peg$parseTerm();
           if (s5 as any !== peg$FAILED) {
-            s6 = peg$parse_();
-            if (s6 as any !== peg$FAILED) {
-              s7 = peg$parseTerm();
-              if (s7 as any !== peg$FAILED) {
-                s4 = [s4, s5, s6, s7];
-                s3 = s4;
-              } else {
-                peg$currPos = s3;
-                s3 = peg$FAILED;
-              }
-            } else {
-              peg$currPos = s3;
-              s3 = peg$FAILED;
-            }
+            s4 = [s4, s5];
+            s3 = s4;
           } else {
             peg$currPos = s3;
             s3 = peg$FAILED;
@@ -555,9 +527,9 @@ function peg$parse(input: string, options?: IParseOptions) {
   }
 
   function peg$parseTerm(): any {
-    let s0, s1, s2, s3, s4, s5, s6, s7;
+    let s0, s1, s2, s3, s4, s5;
 
-    const key = peg$currPos * 7 + 1;
+    const key = peg$currPos * 5 + 1;
     const cached: ICached = peg$resultsCache[key];
 
     if (cached) {
@@ -571,30 +543,18 @@ function peg$parse(input: string, options?: IParseOptions) {
     if (s1 as any !== peg$FAILED) {
       s2 = [];
       s3 = peg$currPos;
-      s4 = peg$parse_();
+      if (peg$c3.test(input.charAt(peg$currPos))) {
+        s4 = input.charAt(peg$currPos);
+        peg$currPos++;
+      } else {
+        s4 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$c4); }
+      }
       if (s4 as any !== peg$FAILED) {
-        if (peg$c3.test(input.charAt(peg$currPos))) {
-          s5 = input.charAt(peg$currPos);
-          peg$currPos++;
-        } else {
-          s5 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c4); }
-        }
+        s5 = peg$parseFactor();
         if (s5 as any !== peg$FAILED) {
-          s6 = peg$parse_();
-          if (s6 as any !== peg$FAILED) {
-            s7 = peg$parseFactor();
-            if (s7 as any !== peg$FAILED) {
-              s4 = [s4, s5, s6, s7];
-              s3 = s4;
-            } else {
-              peg$currPos = s3;
-              s3 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s3;
-            s3 = peg$FAILED;
-          }
+          s4 = [s4, s5];
+          s3 = s4;
         } else {
           peg$currPos = s3;
           s3 = peg$FAILED;
@@ -606,30 +566,18 @@ function peg$parse(input: string, options?: IParseOptions) {
       while (s3 as any !== peg$FAILED) {
         s2.push(s3);
         s3 = peg$currPos;
-        s4 = peg$parse_();
+        if (peg$c3.test(input.charAt(peg$currPos))) {
+          s4 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s4 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c4); }
+        }
         if (s4 as any !== peg$FAILED) {
-          if (peg$c3.test(input.charAt(peg$currPos))) {
-            s5 = input.charAt(peg$currPos);
-            peg$currPos++;
-          } else {
-            s5 = peg$FAILED;
-            if (peg$silentFails === 0) { peg$fail(peg$c4); }
-          }
+          s5 = peg$parseFactor();
           if (s5 as any !== peg$FAILED) {
-            s6 = peg$parse_();
-            if (s6 as any !== peg$FAILED) {
-              s7 = peg$parseFactor();
-              if (s7 as any !== peg$FAILED) {
-                s4 = [s4, s5, s6, s7];
-                s3 = s4;
-              } else {
-                peg$currPos = s3;
-                s3 = peg$FAILED;
-              }
-            } else {
-              peg$currPos = s3;
-              s3 = peg$FAILED;
-            }
+            s4 = [s4, s5];
+            s3 = s4;
           } else {
             peg$currPos = s3;
             s3 = peg$FAILED;
@@ -658,9 +606,9 @@ function peg$parse(input: string, options?: IParseOptions) {
   }
 
   function peg$parseFactor(): any {
-    let s0, s1, s2, s3, s4, s5;
+    let s0, s1, s2, s3;
 
-    const key = peg$currPos * 7 + 2;
+    const key = peg$currPos * 5 + 2;
     const cached: ICached = peg$resultsCache[key];
 
     if (cached) {
@@ -678,31 +626,19 @@ function peg$parse(input: string, options?: IParseOptions) {
       if (peg$silentFails === 0) { peg$fail(peg$c7); }
     }
     if (s1 as any !== peg$FAILED) {
-      s2 = peg$parse_();
+      s2 = peg$parseExpr();
       if (s2 as any !== peg$FAILED) {
-        s3 = peg$parseExpr();
+        if (input.charCodeAt(peg$currPos) === 41) {
+          s3 = peg$c8;
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c9); }
+        }
         if (s3 as any !== peg$FAILED) {
-          s4 = peg$parse_();
-          if (s4 as any !== peg$FAILED) {
-            if (input.charCodeAt(peg$currPos) === 41) {
-              s5 = peg$c8;
-              peg$currPos++;
-            } else {
-              s5 = peg$FAILED;
-              if (peg$silentFails === 0) { peg$fail(peg$c9); }
-            }
-            if (s5 as any !== peg$FAILED) {
-              peg$savedPos = s0;
-              s1 = peg$c10(s3);
-              s0 = s1;
-            } else {
-              peg$currPos = s0;
-              s0 = peg$FAILED;
-            }
-          } else {
-            peg$currPos = s0;
-            s0 = peg$FAILED;
-          }
+          peg$savedPos = s0;
+          s1 = peg$c10(s2);
+          s0 = s1;
         } else {
           peg$currPos = s0;
           s0 = peg$FAILED;
@@ -730,7 +666,7 @@ function peg$parse(input: string, options?: IParseOptions) {
   function peg$parseDice(): any {
     let s0, s1, s2, s3, s4, s5, s6;
 
-    const key = peg$currPos * 7 + 3;
+    const key = peg$currPos * 5 + 3;
     const cached: ICached = peg$resultsCache[key];
 
     if (cached) {
@@ -818,7 +754,7 @@ function peg$parse(input: string, options?: IParseOptions) {
   function peg$parseInteger(): any {
     let s0, s1, s2;
 
-    const key = peg$currPos * 7 + 4;
+    const key = peg$currPos * 5 + 4;
     const cached: ICached = peg$resultsCache[key];
 
     if (cached) {
@@ -860,104 +796,6 @@ function peg$parse(input: string, options?: IParseOptions) {
     if (s0 as any === peg$FAILED) {
       s1 = peg$FAILED;
       if (peg$silentFails === 0) { peg$fail(peg$c18); }
-    }
-
-    peg$resultsCache[key] = { nextPos: peg$currPos, result: s0 };
-
-    return s0;
-  }
-
-  function peg$parseComment(): any {
-    let s0, s1, s2, s3;
-
-    const key = peg$currPos * 7 + 5;
-    const cached: ICached = peg$resultsCache[key];
-
-    if (cached) {
-      peg$currPos = cached.nextPos;
-
-      return cached.result;
-    }
-
-    s0 = peg$currPos;
-    if (peg$c22.test(input.charAt(peg$currPos))) {
-      s1 = input.charAt(peg$currPos);
-      peg$currPos++;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) { peg$fail(peg$c23); }
-    }
-    if (s1 as any !== peg$FAILED) {
-      s2 = [];
-      if (input.length > peg$currPos) {
-        s3 = input.charAt(peg$currPos);
-        peg$currPos++;
-      } else {
-        s3 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c24); }
-      }
-      while (s3 as any !== peg$FAILED) {
-        s2.push(s3);
-        if (input.length > peg$currPos) {
-          s3 = input.charAt(peg$currPos);
-          peg$currPos++;
-        } else {
-          s3 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c24); }
-        }
-      }
-      if (s2 as any !== peg$FAILED) {
-        s1 = [s1, s2];
-        s0 = s1;
-      } else {
-        peg$currPos = s0;
-        s0 = peg$FAILED;
-      }
-    } else {
-      peg$currPos = s0;
-      s0 = peg$FAILED;
-    }
-
-    peg$resultsCache[key] = { nextPos: peg$currPos, result: s0 };
-
-    return s0;
-  }
-
-  function peg$parse_(): any {
-    let s0, s1;
-
-    const key = peg$currPos * 7 + 6;
-    const cached: ICached = peg$resultsCache[key];
-
-    if (cached) {
-      peg$currPos = cached.nextPos;
-
-      return cached.result;
-    }
-
-    peg$silentFails++;
-    s0 = [];
-    if (peg$c26.test(input.charAt(peg$currPos))) {
-      s1 = input.charAt(peg$currPos);
-      peg$currPos++;
-    } else {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) { peg$fail(peg$c27); }
-    }
-    while (s1 as any !== peg$FAILED) {
-      s0.push(s1);
-      if (peg$c26.test(input.charAt(peg$currPos))) {
-        s1 = input.charAt(peg$currPos);
-        peg$currPos++;
-      } else {
-        s1 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c27); }
-      }
-    }
-    peg$silentFails--;
-    if (s0 as any === peg$FAILED) {
-      s1 = peg$FAILED;
-      if (peg$silentFails === 0) { peg$fail(peg$c25); }
     }
 
     peg$resultsCache[key] = { nextPos: peg$currPos, result: s0 };
