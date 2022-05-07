@@ -1,7 +1,17 @@
 {
-  "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
-    "strictNullChecks": false,
-    "esModuleInterop": true
-  }
+    "rootDir": "src",
+    "outDir": "lib",
+    "target": "es2020",
+    "module": "commonjs",
+    "declaration": true,
+    "composite": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "src"
+  ]
 }

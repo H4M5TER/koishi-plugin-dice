@@ -1,10 +1,12 @@
 # 骰子插件 for Koishi
 
 [![npm](https://img.shields.io/npm/v/koishi-plugin-dice?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-dice)
+本插件使用 Koishi 工作区进行开发，不存在 devDep 和 lockfile
 
 ## 杂项
 
-- [ ] 提供 tree-sitter-dice 的 Windows 预编译
+- [x] ~~提供 tree-sitter-dice 的 Windows 预编译~~
+- [x] 让 node-gyp 滚
 - [x] 升级到 Koishi v4
 
 ## 功能

@@ -1,6 +1,6 @@
 {
     "name": "koishi-plugin-dice",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "author": "H4M5TER <zhuxx2003@gmail.com>",
     "repository": "github:H4M5TER/koishi-plugin-dice",
     "license": "MIT",
@@ -22,12 +22,14 @@
         "lib",
         "dist"
     ],
-    "scripts": {},
-    "peerDependencies": {
-        "koishi": "^4.5.1"
+    "scripts": {
+        "build": "peggy --plugin ./node_modules/ts-pegjs/src/tspegjs -o ./src/parser.ts --cache src/dice.peggy"
     },
-    "dependencies": {
-        "tree-sitter": "^0.20.0",
-        "tree-sitter-dice": "^0.1.4"
+    "peerDependencies": {
+        "koishi": "^4.6.1"
+    },
+    "devDependencies": {
+        "peggy": "^1.2.0",
+        "ts-pegjs": "^1.2.2"
     }
 }
