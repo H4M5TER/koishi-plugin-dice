@@ -10,13 +10,28 @@ export function apply(ctx: Context) {
     .option('hide', '--hide')
     .userFields(['name'])
     .action(({ options, session }, input = '') => {
-      console.log('roll triggered')
-      const match = input.match(/(([^#]+)#)?.+/g)
-      let result = ctx.dice.parse(input)
-      if (!options.hide) return result
+      function flat(input: [string, number]): string {
+        if (parseInt(input[0]) === input[1])
+          return input[0]
+        return `${input[0]} = ${input[1]}`
+      }
+
+      const [, time, dice, comment = ''] = input.trim().toLowerCase().match(/(?:([^#]+)#)?([\d+*x\-\/dk()]+)(.*)?/)
+      let answer: string
+      if (time) {
+        const parsed_time = ctx.dice.parse(time)
+        answer = `${session.username}掷骰 ${time} 次: ${comment}\n${time} = ${flat(parsed_time)}\n`
+        for (let i = 1; i <= parsed_time[1]; ++i) {
+          answer += `${i}. ${dice} = ${flat(ctx.dice.parse(dice))}\n`
+        }
+      } else {
+        answer = `${session.username}掷骰: ${comment}\n ${flat(ctx.dice.parse(dice))}`
+      }
+      
+      if (!options.hide) return answer
       session.bot.sendPrivateMessage(
         session.userId,
-        `在[${session.channelName}](${session.channelId})中:\n${result}`
+        `在[${session.channelName}]:\n${answer}`
       )
       return `${session.username}进行了一次暗骰`
     })
