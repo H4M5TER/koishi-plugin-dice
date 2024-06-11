@@ -16,8 +16,5 @@
       "node",
       "yml-register/types"
     ]
-  },
-  "include": [
-    "src"
-  ]
+  }
 }

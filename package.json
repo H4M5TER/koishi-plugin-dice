@@ -1,35 +1,35 @@
 {
-    "name": "@h4m5ter/koishi-plugin-dice",
-    "version": "0.6.0",
-    "author": "H4M5TER <zhuxx2003@gmail.com>",
-    "repository": "github:H4M5TER/koishi-plugin-dice",
-    "license": "MIT",
-    "description": "Dice for Koishi",
-    "homepage": "https://github.com/H4M5TER/koishi-plugin-dice#readme",
-    "bugs": "https://github.com/H4M5TER/koishi-plugin-dice/issues",
-    "keywords": [
-        "chatbot",
-        "koishi",
-        "plugin",
-        "trpg",
-        "dice",
-        "coc",
-        "dnd"
-    ],
-    "main": "lib/index.js",
-    "typings": "lib/index.d.ts",
-    "files": [
-      "lib",
-      "dist"
-    ],
-    "scripts": {
-      "build": "peggy --plugin ./node_modules/ts-pegjs/src/tspegjs -o src/parser.ts --cache src/dice.peggy && peggy -o lib/parser.js --cache src/dice.peggy"
-    },
-    "peerDependencies": {
-      "koishi": "^4.6.1"
-    },
-    "devDependencies": {
-      "peggy": "^1.2.0",
-      "ts-pegjs": "^1.2.2"
-    }
+  "name": "@h4m5ter/koishi-plugin-dice",
+  "version": "0.6.1",
+  "author": "H4M5TER <zhuxx2003@gmail.com>",
+  "repository": "github:H4M5TER/koishi-plugin-dice",
+  "license": "MIT",
+  "description": "Dice for Koishi",
+  "homepage": "https://github.com/H4M5TER/koishi-plugin-dice#readme",
+  "bugs": "https://github.com/H4M5TER/koishi-plugin-dice/issues",
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "trpg",
+    "dice",
+    "coc",
+    "dnd"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "scripts": {
+    "build": "peggy --plugin ./node_modules/ts-pegjs/src/tspegjs -o src/parser.ts --cache dice.peggy"
+  },
+  "peerDependencies": {
+    "koishi": "^4.16.8"
+  },
+  "devDependencies": {
+    "peggy": "^1.2.0",
+    "ts-pegjs": "^1.2.2"
+  }
 }

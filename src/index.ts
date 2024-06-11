@@ -1,7 +1,9 @@
-import { Context } from 'koishi'
+import { Context, z } from 'koishi'
 import dice from './dice'
 
 export const name = 'dice'
+
+export const Config = z.object({})
 
 export function apply(ctx: Context) {
   ctx.plugin(dice)
@@ -21,10 +23,10 @@ export function apply(ctx: Context) {
       let answer: string
       if (time) {
         const parsed_time = ctx.dice.parse(time)
-        answer = session.text('.multi-dice', [session.username, time, comment, time, flat(parsed_time)])
-        for (let i = 1; i <= parsed_time[1]; ++i) {
-          answer += `${i}. ${dice} = ${flat(ctx.dice.parse(dice))}\n`
-        }
+        const result = Array(parsed_time[1]).fill(0).map((_, i) => {
+          return `${i + 1}. ${dice} = ${flat(ctx.dice.parse(dice))}`
+        }).join('\n')
+        answer = session.text('.multi-dice', [session.username, time, comment, flat(parsed_time), result])
       } else {
         answer = session.text('.single-dice', [session.username, comment, dice, flat(ctx.dice.parse(dice))])
       }
@@ -32,23 +34,24 @@ export function apply(ctx: Context) {
       if (!options.hide) return answer
       session.bot.sendPrivateMessage(
         session.userId,
-        `[${session.channelName}]:\n${answer}`
+        `[${session.event.channel.name}]:\n${answer}`
       )
       return session.text('.hide', [session.username])
     })
   ctx.middleware((session, next) => {
-    const { content, prefix } = session.parsed
-    if (prefix && content[0] === 'r') {
-      if (content[1] === 'h')
-        return session.execute({
-          name: 'roll',
-          args: [content.slice(2)],
-          options: { hide: true },
-        })
-      return session.execute({
-        name: 'roll',
-        args: [content.slice(1)]
-      })
-    } else return next()
+    const { content, prefix } = session.stripped
+    if (!prefix) return next()
+    let index = prefix.length
+    if (content[index] !== 'r') return next()
+    let options = {}
+    if (content[index + 1] === 'h') {
+      options = { hide: true }
+      index += 1
+    }
+    return session.execute({
+      name: 'roll',
+      args: [content.slice(index + 1)],
+      options,
+    })
   })
 }
